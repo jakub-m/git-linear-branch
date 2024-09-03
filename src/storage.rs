@@ -5,7 +5,7 @@ pub struct JsonStorage {}
 
 impl Storage for JsonStorage {
     fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), String> {
-        dbg!(branch_prefix);
+        dbg!(branch_prefix); // TODO
         Ok(())
     }
 }

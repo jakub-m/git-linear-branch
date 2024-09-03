@@ -4,15 +4,24 @@ use crate::storage::Storage;
 use regex::Regex;
 pub struct PushCommand<'a> {
     storage: &'a dyn Storage,
+    branch_prefix: String,
 }
 
 /// Memorize a branch prefix.
 impl<'a> PushCommand<'a> {
-    pub fn new(storage: &'a dyn Storage) -> PushCommand {
-        PushCommand { storage }
+    pub fn from_args(
+        args: &Vec<String>,
+        storage: &'a dyn Storage,
+    ) -> Result<PushCommand<'a>, String> {
+        let args = PushCommandArgs::from_args(args)?;
+        Ok(PushCommand {
+            storage,
+            branch_prefix: args.branch_name,
+        })
     }
-    pub fn run(&self, branch_prefix: &str) -> Result<(), String> {
-        let branch_prefix = sanitize_branch_name(branch_prefix);
+
+    pub fn run(&self) -> Result<(), String> {
+        let branch_prefix = sanitize_branch_name(&self.branch_prefix);
         self.storage.store_branch_prefix(&branch_prefix)
     }
 }
@@ -27,32 +36,25 @@ fn sanitize_branch_name(branch_name: &str) -> String {
 
 #[derive(Debug)]
 pub struct PushCommandArgs {
-    pub branch_name: Option<String>,
+    pub branch_name: String,
 }
 
 impl PushCommandArgs {
     pub fn from_args(args: &Vec<String>) -> Result<PushCommandArgs, String> {
-        let mut output = PushCommandArgs { branch_name: None };
-        let mut iter_args = args.iter();
-        iter_args.next();
-
-        while let Some(arg) = iter_args.next() {
+        let mut branch_name = None;
+        let mut args_iter = args.iter();
+        while let Some(arg) = args_iter.next() {
             if arg == "-h" {
                 PushCommandArgs::print_help();
                 process::exit(0);
-            } else if output.branch_name.is_none() {
-                output = PushCommandArgs {
-                    branch_name: Some(arg.to_string()),
-                    ..output
-                }
+            } else if branch_name.is_none() {
+                branch_name = Some(arg.to_string());
             } else {
                 return Err(format!("unknown param {:?}", arg));
             }
         }
-        if output.branch_name.is_none() {
-            return Err("branch missing".to_string());
-        }
-        Ok(output)
+        let branch_name = branch_name.ok_or("branch missing".to_string())?;
+        Ok(PushCommandArgs { branch_name })
     }
 
     fn print_help() {
