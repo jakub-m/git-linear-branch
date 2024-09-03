@@ -10,7 +10,7 @@ pub fn run() -> Result<(), String> {
     match args.command.as_ref().expect("bug: command missing") {
         Command::PushPrefix => {
             let c = PushCommand::new(&storage);
-            c.run("foo/bar-123")?;
+            c.run("foomisfs-sdf/bar-123-goosdfs")?;
         }
     };
     dbg!(args);
