@@ -1,6 +1,6 @@
 use std::process;
 
-use crate::storage::Storage;
+use crate::{command::Command, storage::Storage};
 use regex::Regex;
 pub struct PushCommand<'a> {
     storage: &'a dyn Storage,
@@ -19,8 +19,10 @@ impl<'a> PushCommand<'a> {
             branch_prefix: args.branch_name,
         })
     }
+}
 
-    pub fn run(&self) -> Result<(), String> {
+impl<'a> Command for PushCommand<'a> {
+    fn run(&self) -> Result<(), String> {
         let branch_prefix = sanitize_branch_name(&self.branch_prefix);
         self.storage.store_branch_prefix(&branch_prefix)
     }

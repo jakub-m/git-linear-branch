@@ -2,6 +2,8 @@ use std::process;
 
 mod app;
 mod args;
+mod command;
+mod command_list;
 mod command_push;
 mod storage;
 

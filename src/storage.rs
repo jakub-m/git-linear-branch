@@ -30,8 +30,7 @@ impl JsonStorage {
 
 impl Storage for JsonStorage {
     fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), String> {
-        dbg!(branch_prefix); // TODO
-
+        dbg!(branch_prefix);
         let mut file = File::open(&self.filepath)
             .map_err(|err| format!("cannot open storage file {}: {}", self.filepath, err))?;
         let mut content = String::new();
