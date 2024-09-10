@@ -9,8 +9,22 @@ struct Stored {
 }
 
 pub trait Storage {
-    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), String>;
+    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), StorageError>;
+    fn list_prefixes(&self) -> Result<Vec<String>, StorageError>;
 }
+
+pub struct StorageError {
+    message: String,
+}
+
+impl StorageError {
+    pub fn new(message: &str) -> StorageError {
+        StorageError {
+            message: message.to_owned(),
+        }
+    }
+}
+
 pub struct JsonStorage {
     filepath: String,
 }
@@ -29,16 +43,11 @@ impl JsonStorage {
 }
 
 impl Storage for JsonStorage {
-    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), String> {
-        dbg!(branch_prefix);
-        let mut file = File::open(&self.filepath)
-            .map_err(|err| format!("cannot open storage file {}: {}", self.filepath, err))?;
+    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), StorageError> {
+        let mut file = File::open(&self.filepath)?;
         let mut content = String::new();
-        file.read_to_string(&mut content)
-            .map_err(|err| format!("cannot read storage file {}: {}", self.filepath, err))?;
-        let mut json_data: Stored = serde_json::from_str(&content)
-            .map_err(|err| format!("storage file is not valid JSON {}: {}", self.filepath, err))?;
-
+        file.read_to_string(&mut content)?;
+        let mut json_data: Stored = serde_json::from_str(&content)?;
         let mut branches = json_data.branches.take().unwrap_or(vec![]);
         if branches.iter().find(|s| *s == branch_prefix).is_some() {
             return Ok(());
@@ -47,9 +56,43 @@ impl Storage for JsonStorage {
         branches.push(branch_prefix.to_owned());
         json_data.branches = Some(branches);
 
-        let file = File::create(&self.filepath)
-            .map_err(|err| format!("failed to open {} to write: {}", self.filepath, err))?;
-        serde_json::to_writer_pretty(file, &json_data)
-            .map_err(|err| format!("failed to write {}: {}", self.filepath, err))
+        let file = File::create(&self.filepath)?;
+        serde_json::to_writer_pretty(file, &json_data)?;
+        Ok(())
+    }
+
+    fn list_prefixes(&self) -> Result<Vec<String>, StorageError> {
+        let mut content = String::new();
+        File::open(&self.filepath)?.read_to_string(&mut content)?;
+        let json_data: Stored = serde_json::from_str(&content)?;
+        if let Some(branches) = json_data.branches {
+            Ok(branches)
+        } else {
+            Ok(vec![])
+        }
+    }
+}
+
+impl From<String> for StorageError {
+    fn from(value: String) -> Self {
+        StorageError::new(&value)
+    }
+}
+
+impl From<std::io::Error> for StorageError {
+    fn from(value: std::io::Error) -> Self {
+        StorageError::new(&format!("IO error: {}", value))
+    }
+}
+
+impl From<serde_json::Error> for StorageError {
+    fn from(value: serde_json::Error) -> Self {
+        StorageError::new(&format!("JSON error: {}", value))
+    }
+}
+
+impl From<StorageError> for String {
+    fn from(value: StorageError) -> Self {
+        value.message
     }
 }

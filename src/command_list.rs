@@ -14,6 +14,10 @@ impl<'a> ListCommand<'a> {
 
 impl<'a> Command for ListCommand<'a> {
     fn run(&self) -> Result<(), String> {
-        todo!()
+        let prefixes = self.storage.list_prefixes()?;
+        for prefix in prefixes {
+            println!("{}", prefix);
+        }
+        Ok(())
     }
 }
