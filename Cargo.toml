@@ -7,3 +7,7 @@ edition = "2021"
 regex = "1.10.6"
 serde = { version = "1.0.210", features=["derive"]}
 serde_json = "1.0.127"
+
+[[bin]]
+name = "git-newbranch"
+path = "src/main.rs"

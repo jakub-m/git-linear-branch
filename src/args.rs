@@ -32,7 +32,7 @@ impl Args {
                 return Err(format!("unknown param {:?}", arg));
             }
         }
-        return Err("command missing".to_string());
+        return Ok(output); // No command.
     }
 
     fn print_help() {
@@ -41,6 +41,7 @@ Utility to create branch names from past linear branch names.
 Commands
 \tpush
 \tlist
+\tformat (default)
 
 -h\tThis help.
 ";
