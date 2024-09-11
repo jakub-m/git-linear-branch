@@ -1,4 +1,7 @@
 use crate::{command::Command, storage::Storage};
+
+pub const COMMAND_LIST: &str = "list";
+
 pub struct ListCommand<'a> {
     storage: &'a dyn Storage,
 }

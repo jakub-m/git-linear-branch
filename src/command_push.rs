@@ -3,6 +3,8 @@ use std::process;
 use crate::command::Command;
 use crate::storage::Storage;
 use regex::Regex;
+
+// TODO remove this command.
 pub struct PushCommand<'a> {
     storage: &'a dyn Storage,
     branch_prefix: String,
@@ -30,7 +32,7 @@ impl<'a> Command for PushCommand<'a> {
     }
 }
 
-fn sanitize_branch_name(branch_name: &str) -> String {
+pub fn sanitize_branch_name(branch_name: &str) -> String {
     let pat = Regex::new(r"^([^\s]+/\w+-\d+)").unwrap();
     pat.find(branch_name)
         .map(|s| s.as_str())
