@@ -5,14 +5,15 @@ use std::{
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Stored {
-    branches: Option<Vec<String>>,
+    branches: Option<Vec<BranchInfo>>,
 }
 
 pub trait Storage {
     fn store_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
-    fn list_branch_info(&self) -> Result<Vec<String>, StorageError>;
+    fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError>;
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct BranchInfo {
     pub prefix: String,
     pub name: String,
@@ -54,11 +55,12 @@ impl Storage for JsonStorage {
         file.read_to_string(&mut content)?;
         let mut json_data: Stored = serde_json::from_str(&content)?;
         let mut branches = json_data.branches.take().unwrap_or(vec![]);
-        if branches.iter().find(|s| **s == info.prefix).is_some() {
-            return Ok(());
-        }
+        // TODO replace and bump
+        //if branches.iter().find(|s| **s == info).is_some() {
+        //    return Ok(());
+        //}
 
-        branches.push(info.prefix.to_owned());
+        branches.push(info.clone());
         json_data.branches = Some(branches);
 
         let file = File::create(&self.filepath)?;
@@ -66,12 +68,12 @@ impl Storage for JsonStorage {
         Ok(())
     }
 
-    fn list_branch_info(&self) -> Result<Vec<String>, StorageError> {
+    fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError> {
         let mut content = String::new();
         File::open(&self.filepath)?.read_to_string(&mut content)?;
         let json_data: Stored = serde_json::from_str(&content)?;
-        if let Some(branches) = json_data.branches {
-            Ok(branches)
+        if let Some(info_list) = json_data.branches {
+            Ok(info_list)
         } else {
             Ok(vec![])
         }

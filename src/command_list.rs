@@ -17,9 +17,9 @@ impl<'a> ListCommand<'a> {
 
 impl<'a> Command for ListCommand<'a> {
     fn run(&self) -> Result<(), String> {
-        let prefixes = self.storage.list_branch_info()?;
-        for prefix in prefixes {
-            println!("{}", prefix);
+        let info_list = self.storage.list_branch_info()?;
+        for info in &info_list {
+            println!("{:?}", info);
         }
         Ok(())
     }
