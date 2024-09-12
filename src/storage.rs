@@ -54,13 +54,24 @@ impl Storage for JsonStorage {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
         let mut json_data: Stored = serde_json::from_str(&content)?;
-        let mut branches = json_data.branches.take().unwrap_or(vec![]);
-        // TODO replace and bump
-        //if branches.iter().find(|s| **s == info).is_some() {
-        //    return Ok(());
-        //}
+        let branches = json_data.branches.take().unwrap_or(vec![]);
 
-        branches.push(info.clone());
+        // If there is a branch with the same prefix, then replace the existing branch with the new branch.
+        let mut found_existing_with_same_prefix = false;
+        let mut branches: Vec<BranchInfo> = branches
+            .into_iter()
+            .map(|b| {
+                if b.prefix == info.prefix {
+                    found_existing_with_same_prefix = true;
+                    info.clone()
+                } else {
+                    b
+                }
+            })
+            .collect();
+        if !found_existing_with_same_prefix {
+            branches.push(info.clone());
+        }
         json_data.branches = Some(branches);
 
         let file = File::create(&self.filepath)?;
