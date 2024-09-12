@@ -15,6 +15,7 @@ pub trait Storage {
 
 pub struct BranchInfo {
     pub prefix: String,
+    pub name: String,
 }
 
 pub struct StorageError {

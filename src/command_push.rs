@@ -7,7 +7,7 @@ use regex::Regex;
 // TODO remove this command.
 pub struct PushCommand<'a> {
     storage: &'a dyn Storage,
-    branch_prefix: String,
+    branch_name: String,
 }
 
 /// Memorize a branch prefix.
@@ -19,15 +19,18 @@ impl<'a> PushCommand<'a> {
         let args = PushCommandArgs::from_args(args)?;
         Ok(PushCommand {
             storage,
-            branch_prefix: args.branch_name,
+            branch_name: args.branch_name,
         })
     }
 }
 
 impl<'a> Command for PushCommand<'a> {
     fn run(&self) -> Result<(), String> {
-        let prefix = sanitize_branch_name(&self.branch_prefix);
-        let info = BranchInfo { prefix };
+        let prefix = sanitize_branch_name(&self.branch_name);
+        let info = BranchInfo {
+            prefix,
+            name: self.branch_name.to_owned(),
+        };
         self.storage.store_branch_info(&info)?;
         Ok(())
     }

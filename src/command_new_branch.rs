@@ -38,6 +38,7 @@ impl<'a> Command for NewBranch<'a> {
     fn run(&self) -> Result<(), String> {
         let info = BranchInfo {
             prefix: self.prefix.to_owned(),
+            name: self.formatted_branch_name.to_owned(),
         };
         self.storage.store_branch_info(&info)?;
         let formatted = &self.formatted_branch_name;
