@@ -1,7 +1,7 @@
 use std::process;
 
 use crate::command::Command;
-use crate::storage::Storage;
+use crate::storage::{BranchInfo, Storage};
 use regex::Regex;
 
 // TODO remove this command.
@@ -26,8 +26,9 @@ impl<'a> PushCommand<'a> {
 
 impl<'a> Command for PushCommand<'a> {
     fn run(&self) -> Result<(), String> {
-        let branch_prefix = sanitize_branch_name(&self.branch_prefix);
-        self.storage.store_branch_prefix(&branch_prefix)?;
+        let prefix = sanitize_branch_name(&self.branch_prefix);
+        let info = BranchInfo { prefix };
+        self.storage.store_branch_info(&info)?;
         Ok(())
     }
 }

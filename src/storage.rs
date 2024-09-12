@@ -9,8 +9,12 @@ struct Stored {
 }
 
 pub trait Storage {
-    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), StorageError>;
-    fn list_prefixes(&self) -> Result<Vec<String>, StorageError>;
+    fn store_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
+    fn list_branch_info(&self) -> Result<Vec<String>, StorageError>;
+}
+
+pub struct BranchInfo {
+    pub prefix: String,
 }
 
 pub struct StorageError {
@@ -43,17 +47,17 @@ impl JsonStorage {
 }
 
 impl Storage for JsonStorage {
-    fn store_branch_prefix(&self, branch_prefix: &str) -> Result<(), StorageError> {
+    fn store_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError> {
         let mut file = File::open(&self.filepath)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
         let mut json_data: Stored = serde_json::from_str(&content)?;
         let mut branches = json_data.branches.take().unwrap_or(vec![]);
-        if branches.iter().find(|s| *s == branch_prefix).is_some() {
+        if branches.iter().find(|s| **s == info.prefix).is_some() {
             return Ok(());
         }
 
-        branches.push(branch_prefix.to_owned());
+        branches.push(info.prefix.to_owned());
         json_data.branches = Some(branches);
 
         let file = File::create(&self.filepath)?;
@@ -61,7 +65,7 @@ impl Storage for JsonStorage {
         Ok(())
     }
 
-    fn list_prefixes(&self) -> Result<Vec<String>, StorageError> {
+    fn list_branch_info(&self) -> Result<Vec<String>, StorageError> {
         let mut content = String::new();
         File::open(&self.filepath)?.read_to_string(&mut content)?;
         let json_data: Stored = serde_json::from_str(&content)?;
