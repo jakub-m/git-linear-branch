@@ -2,4 +2,6 @@ build:
 	cargo build
 release:
 	cargo build --release
-.phony: build
+clean:
+	rm -rf target
+.phony: build release build

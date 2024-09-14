@@ -1,8 +1,8 @@
 use std::env;
 use std::process::Command;
-use std::string::FromUtf8Error;
 
 use crate::args::Args;
+use crate::err::AppError;
 use crate::storage::{BranchInfo, JsonStorage, Storage};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -91,9 +91,7 @@ fn checkout_branch(branch_name: &str) -> Result<(), AppError> {
     }
     match output.status.success() {
         true => Ok(()),
-        false => Err(AppError {
-            message: "failed to checkout branch".to_string(),
-        }),
+        false => Err(AppError::new("failed to checkout branch")),
     }
 }
 
@@ -109,30 +107,4 @@ fn update_last_used_prefix(
     };
     storage.store_branch_info(&info)?;
     Ok(())
-}
-
-struct AppError {
-    message: String,
-}
-
-impl From<std::io::Error> for AppError {
-    fn from(value: std::io::Error) -> Self {
-        AppError {
-            message: format!("IO error: {}", value.to_string()),
-        }
-    }
-}
-
-impl From<FromUtf8Error> for AppError {
-    fn from(value: FromUtf8Error) -> Self {
-        AppError {
-            message: format!("UTF8 error: {}", value.to_string()),
-        }
-    }
-}
-
-impl From<AppError> for String {
-    fn from(value: AppError) -> Self {
-        value.message
-    }
 }

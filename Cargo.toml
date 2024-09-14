@@ -11,5 +11,5 @@ serde = { version = "1.0.210", features=["derive"]}
 serde_json = "1.0.127"
 
 [[bin]]
-name = "git-newbranch"
+name = "git-linear-branch"
 path = "src/main.rs"
