@@ -31,8 +31,6 @@ _fzf_comprun() {
 
 ## Usage
 
-The
-
 List all the prefixes:
 
 ```bash
