@@ -1,5 +1,4 @@
 /target
 tmp.json
 git-newbranch
-.meta-for-git.json
-
+.git-linear-branch-meta.json

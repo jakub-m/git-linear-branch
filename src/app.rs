@@ -7,7 +7,7 @@ use crate::storage::{BranchInfo, JsonStorage, Storage};
 use lazy_static::lazy_static;
 use regex::Regex;
 
-const DEFAULT_STORAGE_FILENAME: &str = ".meta-for-git.json";
+const DEFAULT_STORAGE_FILENAME: &str = ".git-linear-branch-meta.json";
 const SEP: &str = "-";
 
 lazy_static! {
