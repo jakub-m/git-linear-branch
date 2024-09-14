@@ -2,6 +2,7 @@ use std::process;
 
 use crate::command::Command;
 use crate::storage::{BranchInfo, Storage};
+use chrono::Utc;
 use regex::Regex;
 
 // TODO remove this command.
@@ -27,9 +28,11 @@ impl<'a> PushCommand<'a> {
 impl<'a> Command for PushCommand<'a> {
     fn run(&self) -> Result<(), String> {
         let prefix = sanitize_branch_name(&self.branch_name);
+        let last_used = chrono::Utc::now();
         let info = BranchInfo {
             prefix,
             name: self.branch_name.to_owned(),
+            last_used,
         };
         self.storage.store_branch_info(&info)?;
         Ok(())

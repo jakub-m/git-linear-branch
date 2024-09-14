@@ -1,3 +1,5 @@
+use chrono::serde::ts_seconds;
+use chrono::{DateTime, Utc};
 use std::{
     fs::File,
     io::{Read, Write},
@@ -17,6 +19,8 @@ pub trait Storage {
 pub struct BranchInfo {
     pub prefix: String,
     pub name: String,
+    #[serde(with = "ts_seconds")]
+    pub last_used: DateTime<Utc>,
 }
 
 pub struct StorageError {
