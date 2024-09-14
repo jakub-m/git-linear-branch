@@ -31,6 +31,8 @@ _fzf_comprun() {
 
 ## Usage
 
+The tool keeps last 3 prefixes.
+
 List all the prefixes:
 
 ```bash
@@ -48,3 +50,10 @@ Create a branch from a full branch name (copied from Linear)
 ```bash
 git-linear-branch foo/bar-123-hello-world
 ```
+
+Create branch with the last prefix selected implicitly:
+
+```bash
+git-linear-branch hello world
+```
+
