@@ -11,7 +11,7 @@ struct Stored {
 }
 
 pub trait Storage {
-    fn store_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
+    fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError>;
 }
 
@@ -53,7 +53,7 @@ impl JsonStorage {
 }
 
 impl Storage for JsonStorage {
-    fn store_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError> {
+    fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError> {
         let mut file = File::open(&self.filepath)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;

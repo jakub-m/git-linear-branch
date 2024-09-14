@@ -115,7 +115,7 @@ fn update_last_used_prefix(
         last_used: chrono::Utc::now(),
         name: branch_name.to_owned(),
     };
-    storage.store_branch_info(&info)?;
+    storage.push_branch_info(&info)?;
     Ok(())
 }
 
