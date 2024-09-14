@@ -23,7 +23,7 @@ pub fn run() -> Result<(), String> {
     } else {
         let first_arg = args.args.get(0).unwrap();
         let prefix: String;
-        let branch_name_parts: &[String];
+        let full_branch_name: String;
         if is_stored_prefix(&storage, &first_arg)? || looks_like_branch(&first_arg) {
             prefix = get_linear_prefix(&first_arg)
                 .expect(&format!(
@@ -31,12 +31,17 @@ pub fn run() -> Result<(), String> {
                     first_arg
                 ))
                 .to_string();
-            branch_name_parts = &args.args[1..];
+            if args.args.len() == 1 {
+                // Single arg. is treat as a whole new branch name
+                full_branch_name = first_arg.to_owned();
+            } else {
+                full_branch_name = construct_full_branch_name(&prefix, &args.args[1..]);
+            }
         } else {
             prefix = take_latest_prefix(&storage)?;
-            branch_name_parts = &args.args;
+            full_branch_name = construct_full_branch_name(&prefix, &args.args);
         }
-        let full_branch_name = construct_full_branch_name(&prefix, branch_name_parts);
+        // let full_branch_name = construct_full_branch_name(&prefix, branch_name_parts);
         checkout_branch(&full_branch_name)?;
         return update_last_used_prefix(&storage, &prefix, &full_branch_name);
     }
