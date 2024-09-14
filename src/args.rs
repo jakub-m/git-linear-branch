@@ -36,10 +36,6 @@ impl Args {
     fn print_help() {
         let help = "
 Utility to create branch names from past linear branch names.
-Commands
-\tbranch (default)
-\tlist
-
 -h\tThis help.
 ";
         println!("{}", help.trim())

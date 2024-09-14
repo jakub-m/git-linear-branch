@@ -16,8 +16,10 @@ _fzf_comprun() {
 
   case "$command" in
     git-linear-branch)
-                  git-linear-branch | fzf
+                  git-linear-branch | fzf --with-nth 2.. | cut -f1
                   ;;
   esac
 }
 ```
+
+

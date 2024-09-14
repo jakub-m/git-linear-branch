@@ -41,7 +41,6 @@ pub fn run() -> Result<(), String> {
             prefix = take_latest_prefix(&storage)?;
             full_branch_name = construct_full_branch_name(&prefix, &args.args);
         }
-        // let full_branch_name = construct_full_branch_name(&prefix, branch_name_parts);
         checkout_branch(&full_branch_name)?;
         return update_last_used_prefix(&storage, &prefix, &full_branch_name);
     }
@@ -65,7 +64,8 @@ fn list_branches(storage: &dyn Storage) -> Result<(), String> {
     branches.sort_by_key(|b| -b.last_used.timestamp());
     for b in storage.list_branch_info()? {
         let prefix = b.prefix;
-        println!("{prefix}");
+        let branch_name = b.name;
+        println!("{prefix}\t{branch_name}");
     }
     Ok(())
 }
