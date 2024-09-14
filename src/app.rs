@@ -62,7 +62,7 @@ fn is_stored_prefix(storage: &dyn Storage, branch_name: &str) -> Result<bool, St
 fn list_branches(storage: &dyn Storage) -> Result<(), String> {
     let mut branches = storage.list_branch_info()?;
     branches.sort_by_key(|b| -b.last_used.timestamp());
-    for b in storage.list_branch_info()? {
+    for b in branches {
         let prefix = b.prefix;
         let branch_name = b.name;
         println!("{prefix}\t{branch_name}");
