@@ -1,9 +1,16 @@
-git-linear-branch
-----------------------
+## git-linear-branch
 
-A simple helper to speed up creating git new branch names from git branches from [Linear][ref_linear].
+A simple helper to speed up creating git new branch names from git branches from [Linear][ref_linear]. The tool remembers the last Linear-like branch prefix for a directory.
 
-[ref_linear]:https://linear.app/
+[ref_linear]: https://linear.app/
+
+## Installation
+
+```
+make release
+```
+
+Then make the `git-linear-branch` accessible from `$PATH`.
 
 To plug `git-linear-branch` to zsh use the following `_fzf_comprun`:
 
@@ -22,4 +29,24 @@ _fzf_comprun() {
 }
 ```
 
+## Usage
 
+The
+
+List all the prefixes:
+
+```bash
+git-linear-branch `<tab>
+```
+
+Create a branch with selected prefix:
+
+```bash
+git-linear-branch foo/bar-123 hello world
+```
+
+Create a branch from a full branch name (copied from Linear)
+
+```bash
+git-linear-branch foo/bar-123-hello-world
+```
