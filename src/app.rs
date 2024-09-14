@@ -24,8 +24,13 @@ pub fn run() -> Result<(), String> {
         let first_arg = args.args.get(0).unwrap();
         let prefix: String;
         let branch_name_parts: &[String];
-        if looks_like_branch(&first_arg) || is_branch(&storage, &first_arg)? {
-            prefix = first_arg.to_owned();
+        if is_stored_prefix(&storage, &first_arg)? || looks_like_branch(&first_arg) {
+            prefix = get_linear_prefix(&first_arg)
+                .expect(&format!(
+                    "bug: expected {} to be a legal prefix here",
+                    first_arg
+                ))
+                .to_string();
             branch_name_parts = &args.args[1..];
         } else {
             prefix = take_latest_prefix(&storage)?;
@@ -41,7 +46,7 @@ fn looks_like_branch(branch: &str) -> bool {
     get_linear_prefix(branch).is_some()
 }
 
-fn is_branch(storage: &dyn Storage, branch_name: &str) -> Result<bool, String> {
+fn is_stored_prefix(storage: &dyn Storage, branch_name: &str) -> Result<bool, String> {
     let found_branch = storage
         .list_branch_info()?
         .iter()
@@ -75,8 +80,8 @@ fn take_latest_prefix(storage: &dyn Storage) -> Result<String, String> {
 }
 
 fn construct_full_branch_name(prefix: &str, branch_name_parts: &[String]) -> String {
-    let branch_name = branch_name_parts.join(SEP);
-    format!("{prefix}{SEP}{branch_name}")
+    let parts = [&[prefix.to_string()], branch_name_parts].concat();
+    parts.join(SEP)
 }
 
 fn checkout_branch(branch_name: &str) -> Result<(), AppError> {
@@ -107,4 +112,17 @@ fn update_last_used_prefix(
     };
     storage.store_branch_info(&info)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_linear_prefix;
+
+    #[test]
+    fn get_prefix() {
+        assert_eq!(get_linear_prefix("foo"), None);
+        assert_eq!(get_linear_prefix("foo/bar"), None);
+        assert_eq!(get_linear_prefix("foo/bar-123"), Some("foo/bar-123"));
+        assert_eq!(get_linear_prefix("foo/bar-123-quux"), Some("foo/bar-123"));
+    }
 }
