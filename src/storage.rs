@@ -13,6 +13,7 @@ struct Stored {
 pub trait Storage {
     fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError>;
+    fn trim_to_latest(&self, n: usize) -> Result<(), StorageError>;
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
@@ -50,15 +51,26 @@ impl JsonStorage {
             filepath: filepath.to_owned(),
         })
     }
+
+    fn read_from_json(&self) -> Result<Stored, StorageError> {
+        let mut file = File::open(&self.filepath)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+        let data = serde_json::from_str(&content)?;
+        Ok(data)
+    }
+
+    fn write_to_json(&self, data: &Stored) -> Result<(), StorageError> {
+        let file = File::create(&self.filepath)?;
+        serde_json::to_writer_pretty(file, data)?;
+        Ok(())
+    }
 }
 
 impl Storage for JsonStorage {
     fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError> {
-        let mut file = File::open(&self.filepath)?;
-        let mut content = String::new();
-        file.read_to_string(&mut content)?;
-        let mut json_data: Stored = serde_json::from_str(&content)?;
-        let branches = json_data.branches.take().unwrap_or(vec![]);
+        let mut data = self.read_from_json()?;
+        let branches = data.branches.take().unwrap_or(vec![]);
 
         // If there is a branch with the same prefix, then replace the existing branch with the new branch.
         let mut found_existing_with_same_prefix = false;
@@ -76,22 +88,32 @@ impl Storage for JsonStorage {
         if !found_existing_with_same_prefix {
             branches.push(info.clone());
         }
-        json_data.branches = Some(branches);
-
-        let file = File::create(&self.filepath)?;
-        serde_json::to_writer_pretty(file, &json_data)?;
+        data.branches = Some(branches);
+        self.write_to_json(&data)?;
         Ok(())
     }
 
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError> {
         let mut content = String::new();
         File::open(&self.filepath)?.read_to_string(&mut content)?;
-        let json_data: Stored = serde_json::from_str(&content)?;
-        if let Some(info_list) = json_data.branches {
+        let data: Stored = serde_json::from_str(&content)?;
+        if let Some(info_list) = data.branches {
             Ok(info_list)
         } else {
             Ok(vec![])
         }
+    }
+
+    fn trim_to_latest(&self, n: usize) -> Result<(), StorageError> {
+        let mut data = self.read_from_json()?;
+        if data.branches.is_none() {
+            return Ok(());
+        }
+        let mut branches = data.branches.unwrap();
+        branches.sort_by_key(|b| -b.last_used.timestamp());
+        branches.truncate(n);
+        data.branches = Some(branches);
+        self.write_to_json(&data)
     }
 }
 

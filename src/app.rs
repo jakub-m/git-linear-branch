@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 const DEFAULT_STORAGE_FILENAME: &str = ".git-linear-branch-meta.json";
+const DEFAULT_LAST_BRANCHES_COUNT: usize = 3;
 const SEP: &str = "-";
 
 lazy_static! {
@@ -116,6 +117,7 @@ fn update_last_used_prefix(
         name: branch_name.to_owned(),
     };
     storage.push_branch_info(&info)?;
+    storage.trim_to_latest(DEFAULT_LAST_BRANCHES_COUNT)?;
     Ok(())
 }
 
