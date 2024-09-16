@@ -23,21 +23,15 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     } else {
         let first_arg = args.args.get(0).unwrap();
-        //let prefix: String;
-        //let full_branch_name: String;
 
-        // - If the user passed a full branch name:
-        //   - Check if there is stored branch with prefix for the full branch name.
-        //   - If yes, update, if not, create new.
-        // - If the user passed prefix and reminder
-        //   - If the prefix exists, update
-        //   - otherwise, create new
-        // - If the user passed a reminder
-        //    - find latest branch
-        //    - update
         let now = chrono::Utc::now();
         let branch = if let Some(prefix) = get_linear_prefix(&first_arg) {
-            let full_branch_name = construct_full_branch_name(prefix, &args.args[1..]);
+            let full_branch_name = match &args.args[..] {
+                [] => return Err("missing args".to_string()),
+                [branch_name] => branch_name.to_owned(),
+                [prefix, rest @ ..] => construct_full_branch_name(prefix, rest),
+            };
+
             match storage.get_by_prefix(prefix)? {
                 Some(branch) => BranchInfo {
                     name: full_branch_name.to_owned(),
@@ -74,8 +68,8 @@ fn list_branches(storage: &dyn Storage) -> Result<(), String> {
     branches.sort_by_key(|b| -b.last_used.timestamp());
     for b in branches {
         let prefix = b.prefix;
-        let branch_name = b.name;
-        println!("{prefix}\t{branch_name}");
+        let title = b.original_title;
+        println!("{prefix}\t{title}");
     }
     Ok(())
 }
@@ -115,20 +109,38 @@ fn checkout_branch(branch_name: &str) -> Result<(), AppError> {
     }
 }
 
+/// Turn this "foo/foo-123-zzz-zzz2"
+/// into this "FOO-123 zzz zzz2"
 fn title_from_branch_name(s: &str) -> String {
-    // TODO
-    return s.to_owned();
+    let pat = Regex::new(r"^(\w+)/(\w+-\d+)((-[\w\d]+)*)$").unwrap();
+    if let Some(caps) = pat.captures(s) {
+        let ticket_id = caps.get(2).unwrap().as_str().to_uppercase();
+        let rest = caps.get(3).unwrap().as_str().replace("-", " ");
+        format!("{ticket_id}:{rest}")
+    } else {
+        s.to_owned()
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::app::title_from_branch_name;
+
     use super::get_linear_prefix;
 
     #[test]
-    fn get_prefix() {
+    fn test_get_prefix() {
         assert_eq!(get_linear_prefix("foo"), None);
         assert_eq!(get_linear_prefix("foo/bar"), None);
         assert_eq!(get_linear_prefix("foo/bar-123"), Some("foo/bar-123"));
         assert_eq!(get_linear_prefix("foo/bar-123-quux"), Some("foo/bar-123"));
+    }
+
+    #[test]
+    fn test_title_from_branch_name() {
+        assert_eq!(
+            title_from_branch_name("foo/bar-123-aaa-bbb"),
+            "BAR-123: aaa bbb"
+        );
     }
 }

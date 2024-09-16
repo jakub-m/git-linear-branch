@@ -121,8 +121,14 @@ impl Storage for JsonStorage {
 
     fn get_by_prefix(&self, prefix: &str) -> Result<Option<BranchInfo>, StorageError> {
         let data = self.read_from_json()?;
-        data.branches.iter().find(|b| b.pre)
-        todo!();
+        if let Some(branches) = data.branches {
+            Ok(branches
+                .iter()
+                .find(|p| p.prefix == prefix)
+                .map(|b| b.clone()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
