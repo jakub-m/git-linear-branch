@@ -14,6 +14,7 @@ pub trait Storage {
     fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError>;
     fn trim_to_latest(&self, n: usize) -> Result<(), StorageError>;
+    fn get_by_prefix(&self, prefix: &str) -> Result<Option<BranchInfo>, StorageError>;
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
@@ -22,6 +23,7 @@ pub struct BranchInfo {
     pub name: String,
     #[serde(with = "ts_seconds")]
     pub last_used: DateTime<Utc>,
+    pub original_title: String,
 }
 
 pub struct StorageError {
@@ -68,11 +70,12 @@ impl JsonStorage {
 }
 
 impl Storage for JsonStorage {
+    /// Prefix is the key. If there is a branch with the same prefix, then replace the existing
+    /// branch with the new branch.
     fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError> {
         let mut data = self.read_from_json()?;
         let branches = data.branches.take().unwrap_or(vec![]);
 
-        // If there is a branch with the same prefix, then replace the existing branch with the new branch.
         let mut found_existing_with_same_prefix = false;
         let mut branches: Vec<BranchInfo> = branches
             .into_iter()
@@ -114,6 +117,12 @@ impl Storage for JsonStorage {
         branches.truncate(n);
         data.branches = Some(branches);
         self.write_to_json(&data)
+    }
+
+    fn get_by_prefix(&self, prefix: &str) -> Result<Option<BranchInfo>, StorageError> {
+        let data = self.read_from_json()?;
+        data.branches.iter().find(|b| b.pre)
+        todo!();
     }
 }
 
