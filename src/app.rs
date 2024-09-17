@@ -29,7 +29,7 @@ pub fn run() -> Result<(), String> {
             let full_branch_name = match &args.args[..] {
                 [] => return Err("missing args".to_string()),
                 [branch_name] => branch_name.to_owned(),
-                [prefix, rest @ ..] => construct_full_branch_name(prefix, rest),
+                [_branch_name, rest @ ..] => construct_full_branch_name(prefix, rest),
             };
 
             match storage.get_by_prefix(prefix)? {
