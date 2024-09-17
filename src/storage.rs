@@ -1,9 +1,6 @@
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
-use std::{
-    fs::File,
-    io::{Read, Write},
-};
+use std::{fs::File, io::Read};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Stored {
@@ -44,18 +41,16 @@ pub struct JsonStorage {
 
 impl JsonStorage {
     pub fn new(filepath: &str) -> Result<JsonStorage, String> {
-        if let Ok(mut file) = File::create_new(&filepath) {
-            file.write_all("{}".as_bytes()).map_err(|err| {
-                format!("failed to instantiate storage file {}: {}", filepath, err)
-            })?;
-        }
         Ok(JsonStorage {
             filepath: filepath.to_owned(),
         })
     }
 
     fn read_from_json(&self) -> Result<Stored, StorageError> {
-        let mut file = File::open(&self.filepath)?;
+        let mut file = match File::open(&self.filepath) {
+            Ok(file) => file,
+            Err(_) => return Ok(Stored { branches: None }),
+        };
         let mut content = String::new();
         file.read_to_string(&mut content)?;
         let data = serde_json::from_str(&content)?;
@@ -97,9 +92,7 @@ impl Storage for JsonStorage {
     }
 
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError> {
-        let mut content = String::new();
-        File::open(&self.filepath)?.read_to_string(&mut content)?;
-        let data: Stored = serde_json::from_str(&content)?;
+        let data = self.read_from_json()?;
         if let Some(info_list) = data.branches {
             Ok(info_list)
         } else {
