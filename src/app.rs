@@ -17,7 +17,8 @@ lazy_static! {
 
 pub fn run() -> Result<(), String> {
     let args = Args::from_args(&env::args().collect())?;
-    let storage = JsonStorage::new(DEFAULT_STORAGE_FILENAME)?;
+    let storage_file_path = get_git_root_directory()? + "/" + DEFAULT_STORAGE_FILENAME;
+    let storage = JsonStorage::new(&storage_file_path)?;
     if args.args.is_empty() {
         list_branches(&storage)?;
         return Ok(());
@@ -38,11 +39,14 @@ pub fn run() -> Result<(), String> {
                     last_used: now,
                     ..branch
                 },
+                // Insert a new branch into the storage.
                 None => BranchInfo {
                     prefix: prefix.to_owned(),
                     name: full_branch_name.to_owned(),
                     last_used: now,
-                    original_title: title_from_branch_name(&full_branch_name),
+                    // Use "first_arg" and not the full branch name, because the first arg is the original branch name
+                    // from Linear, and we want to use that branch as the reference branch.
+                    original_title: title_from_branch_name(&first_arg),
                 },
             }
         } else {
@@ -119,6 +123,18 @@ fn title_from_branch_name(s: &str) -> String {
         format!("{ticket_id}:{rest}")
     } else {
         s.to_owned()
+    }
+}
+
+fn get_git_root_directory() -> Result<String, AppError> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .output()?;
+    if output.status.success() {
+        let path = String::from_utf8(output.stdout).unwrap();
+        Ok(path.trim().to_owned())
+    } else {
+        Err(AppError::new(&String::from_utf8(output.stderr).unwrap()))
     }
 }
 
