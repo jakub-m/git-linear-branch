@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 const DEFAULT_STORAGE_FILENAME: &str = ".git-linear-branch-meta.json";
-const DEFAULT_LAST_BRANCHES_COUNT: usize = 3;
+const DEFAULT_LAST_BRANCHES_COUNT: usize = 5;
 const SEP: &str = "-";
 
 lazy_static! {
