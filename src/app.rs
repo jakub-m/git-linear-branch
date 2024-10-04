@@ -24,46 +24,11 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     } else {
         let first_arg = args.args.get(0).unwrap();
-
-        let now = chrono::Utc::now();
-        let branch = if let Some(prefix) = get_linear_prefix(&first_arg) {
-            let full_branch_name = match &args.args[..] {
-                [] => return Err("missing args".to_string()),
-                [branch_name] => branch_name.to_owned(),
-                [_branch_name, rest @ ..] => construct_full_branch_name(prefix, rest),
-            };
-
-            match storage.get_by_prefix(prefix)? {
-                Some(branch) => BranchInfo {
-                    name: full_branch_name.to_owned(),
-                    last_used: now,
-                    ..branch
-                },
-                // Insert a new branch into the storage.
-                None => BranchInfo {
-                    prefix: prefix.to_owned(),
-                    name: full_branch_name.to_owned(),
-                    last_used: now,
-                    // Use "first_arg" and not the full branch name, because the first arg is the original branch name
-                    // from Linear, and we want to use that branch as the reference branch.
-                    original_title: title_from_branch_name(&first_arg),
-                },
-            }
+        if first_arg == "--delete" {
+            handle_delete()
         } else {
-            let prefix = take_latest_prefix(&storage)?;
-            let full_branch_name = construct_full_branch_name(&prefix, &args.args);
-            BranchInfo {
-                prefix,
-                last_used: now,
-                name: full_branch_name.to_owned(),
-                original_title: title_from_branch_name(&full_branch_name),
-            }
-        };
-
-        checkout_branch(&branch.name)?;
-        storage.push_branch_info(&branch)?;
-        storage.trim_to_latest(DEFAULT_LAST_BRANCHES_COUNT)?;
-        Ok(())
+            handle_checkout(first_arg, &args, &storage)
+        }
     }
 }
 
@@ -76,6 +41,52 @@ fn list_branches(storage: &dyn Storage) -> Result<(), String> {
         println!("{prefix}\t{title}");
     }
     Ok(())
+}
+
+fn handle_checkout(first_arg: &str, args: &Args, storage: &dyn Storage) -> Result<(), String> {
+    let now = chrono::Utc::now();
+    let branch = if let Some(prefix) = get_linear_prefix(&first_arg) {
+        let full_branch_name = match &args.args[..] {
+            [] => return Err("missing args".to_string()),
+            [branch_name] => branch_name.to_owned(),
+            [_branch_name, rest @ ..] => construct_full_branch_name(prefix, rest),
+        };
+
+        match storage.get_by_prefix(prefix)? {
+            Some(branch) => BranchInfo {
+                name: full_branch_name.to_owned(),
+                last_used: now,
+                ..branch
+            },
+            // Insert a new branch into the storage.
+            None => BranchInfo {
+                prefix: prefix.to_owned(),
+                name: full_branch_name.to_owned(),
+                last_used: now,
+                // Use "first_arg" and not the full branch name, because the first arg is the original branch name
+                // from Linear, and we want to use that branch as the reference branch.
+                original_title: title_from_branch_name(&first_arg),
+            },
+        }
+    } else {
+        let prefix = take_latest_prefix(storage)?;
+        let full_branch_name = construct_full_branch_name(&prefix, &args.args);
+        BranchInfo {
+            prefix,
+            last_used: now,
+            name: full_branch_name.to_owned(),
+            original_title: title_from_branch_name(&full_branch_name),
+        }
+    };
+
+    checkout_branch(&branch.name)?;
+    storage.push_branch_info(&branch)?;
+    storage.trim_to_latest(DEFAULT_LAST_BRANCHES_COUNT)?;
+    Ok(())
+}
+
+fn handle_delete() -> Result<(), String> {
+    todo!();
 }
 
 fn get_linear_prefix<'a>(branch_name: &'a str) -> Option<&'a str> {
