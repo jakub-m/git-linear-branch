@@ -23,7 +23,12 @@ _fzf_comprun() {
 
   case "$command" in
     git-linear-branch)
-                  git-linear-branch | fzf --with-nth 2.. | cut -f1
+                  git-linear-branch \
+                      | fzf \
+                        --with-nth 2.. \
+                        --bind 'ctrl-d:reload(git-linear-branch --delete-prefix {1} && git-linear-branch)' \
+                      | cut -f1
+
                   ;;
   esac
 }
@@ -57,3 +62,8 @@ Create branch with the last prefix selected implicitly:
 git-linear-branch hello world
 ```
 
+Delete prefix from storage:
+
+```bash
+git-linear-branch --delete-prefix foo/bar-123
+```

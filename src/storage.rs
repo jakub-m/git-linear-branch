@@ -9,6 +9,7 @@ struct Stored {
 
 pub trait Storage {
     fn push_branch_info(&self, info: &BranchInfo) -> Result<(), StorageError>;
+    fn replace_branch_info(&self, info: &Vec<BranchInfo>) -> Result<(), StorageError>;
     fn list_branch_info(&self) -> Result<Vec<BranchInfo>, StorageError>;
     fn trim_to_latest(&self, n: usize) -> Result<(), StorageError>;
     fn get_by_prefix(&self, prefix: &str) -> Result<Option<BranchInfo>, StorageError>;
@@ -16,10 +17,13 @@ pub trait Storage {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct BranchInfo {
+    /// Branch prefix.
     pub prefix: String,
+    /// Full branch name.
     pub name: String,
     #[serde(with = "ts_seconds")]
     pub last_used: DateTime<Utc>,
+    /// A readable title describing the original branch.
     pub original_title: String,
 }
 
@@ -87,6 +91,15 @@ impl Storage for JsonStorage {
             branches.push(info.clone());
         }
         data.branches = Some(branches);
+        self.write_to_json(&data)?;
+        Ok(())
+    }
+
+    fn replace_branch_info(&self, info: &Vec<BranchInfo>) -> Result<(), StorageError> {
+        let branches: Vec<BranchInfo> = info.iter().map(|b| b.to_owned()).collect();
+        let data = Stored {
+            branches: Some(branches),
+        };
         self.write_to_json(&data)?;
         Ok(())
     }

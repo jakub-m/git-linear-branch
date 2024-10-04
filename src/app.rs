@@ -24,8 +24,12 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     } else {
         let first_arg = args.args.get(0).unwrap();
-        if first_arg == "--delete" {
-            handle_delete()
+        if first_arg == "--delete-prefix" {
+            if let Some(prefix) = args.args.get(1) {
+                handle_delete(&prefix, &storage)
+            } else {
+                Err("Missing prefix name after --delete-prefix".to_string())
+            }
         } else {
             handle_checkout(first_arg, &args, &storage)
         }
@@ -85,8 +89,15 @@ fn handle_checkout(first_arg: &str, args: &Args, storage: &dyn Storage) -> Resul
     Ok(())
 }
 
-fn handle_delete() -> Result<(), String> {
-    todo!();
+fn handle_delete(prefix: &str, storage: &dyn Storage) -> Result<(), String> {
+    let branch_info = storage.list_branch_info()?;
+    let branch_info = branch_info
+        .iter()
+        .filter(|b| b.prefix != prefix)
+        .map(|b| b.to_owned())
+        .collect();
+    storage.replace_branch_info(&branch_info)?;
+    Ok(())
 }
 
 fn get_linear_prefix<'a>(branch_name: &'a str) -> Option<&'a str> {
