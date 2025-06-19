@@ -1,9 +1,8 @@
-use std::env;
 use std::process::Command;
 
-use crate::args::Args;
 use crate::err::AppError;
 use crate::storage::{BranchInfo, JsonStorage, Storage};
+use clap::Parser;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -16,7 +15,7 @@ lazy_static! {
 }
 
 pub fn run() -> Result<(), String> {
-    let args = Args::from_args(&env::args().collect())?;
+    let args = Args::parse();
     let storage_file_path = get_git_root_directory()? + "/" + DEFAULT_STORAGE_FILENAME;
     let storage = JsonStorage::new(&storage_file_path)?;
     if args.args.is_empty() {
@@ -158,6 +157,15 @@ fn get_git_root_directory() -> Result<String, AppError> {
     } else {
         Err(AppError::new(&String::from_utf8(output.stderr).unwrap()))
     }
+}
+
+#[derive(Parser)]
+#[command(about, version)]
+struct Args {
+    /// Instead of using the state per repository, use single global state.
+    #[arg(short = 'g', long, default_value_t = false)]
+    use_global_state: bool,
+    args: Vec<String>,
 }
 
 #[cfg(test)]
