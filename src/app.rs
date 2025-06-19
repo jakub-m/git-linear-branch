@@ -24,23 +24,17 @@ pub fn run() -> Result<(), String> {
     let storage_file_path = if args.use_global_state {
         create_default_config_directory()? + "/" + DEFAULT_STORAGE_FILENAME
     } else {
-        get_git_root_directory()? + "/." + DEFAULT_STORAGE_FILENAME
+        get_git_root_directory()? + "/" + "." + DEFAULT_STORAGE_FILENAME
     };
 
     let storage = JsonStorage::new(&storage_file_path)?;
-    if args.args.is_empty() {
-        list_branches(&storage)?;
-        return Ok(());
+
+    if let Some(prefix) = args.delete_prefix {
+        handle_delete(&prefix, &storage)
     } else {
-        let first_arg = args.args.get(0).unwrap();
-        if first_arg == "--delete-prefix" {
-            if let Some(prefix) = args.args.get(1) {
-                handle_delete(&prefix, &storage)
-            } else {
-                Err("Missing prefix name after --delete-prefix".to_string())
-            }
-        } else {
-            handle_checkout(first_arg, &args, &storage)
+        match args.args.as_slice() {
+            [] => list_branches(&storage),
+            [first_arg, rest_args @ ..] => handle_checkout(first_arg, rest_args, &storage),
         }
     }
 }
@@ -56,10 +50,10 @@ fn list_branches(storage: &dyn Storage) -> Result<(), String> {
     Ok(())
 }
 
-fn handle_checkout(first_arg: &str, args: &Args, storage: &dyn Storage) -> Result<(), String> {
+fn handle_checkout(first_arg: &str, args: &[String], storage: &dyn Storage) -> Result<(), String> {
     let now = chrono::Utc::now();
     let branch = if let Some(prefix) = get_linear_prefix(&first_arg) {
-        let full_branch_name = match &args.args[..] {
+        let full_branch_name = match args {
             [] => return Err("missing args".to_string()),
             [branch_name] => branch_name.to_owned(),
             [_branch_name, rest @ ..] => construct_full_branch_name(prefix, rest),
@@ -83,7 +77,7 @@ fn handle_checkout(first_arg: &str, args: &Args, storage: &dyn Storage) -> Resul
         }
     } else {
         let prefix = take_latest_prefix(storage)?;
-        let full_branch_name = construct_full_branch_name(&prefix, &args.args);
+        let full_branch_name = construct_full_branch_name(&prefix, &args);
         BranchInfo {
             prefix,
             last_used: now,
@@ -185,8 +179,16 @@ fn create_default_config_directory() -> Result<String, AppError> {
 #[command(about, version)]
 struct Args {
     /// Instead of using the state per repository, use single global state.
-    #[arg(short = 'g', long, default_value_t = false)]
+    #[arg(
+        short = 'g',
+        long,
+        default_value_t = false,
+        env = "GIT_LINEAR_USE_GLOBAL_STATE"
+    )]
     use_global_state: bool,
+    /// Delete the selected prefix from the state
+    #[arg(long)]
+    delete_prefix: Option<String>,
     args: Vec<String>,
 }
 

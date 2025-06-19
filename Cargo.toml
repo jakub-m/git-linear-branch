@@ -1,12 +1,12 @@
 [package]
 name = "git-branch-from-linear"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Utility to create branch names from past linear branch names."
 
 [dependencies]
 chrono = {version = "0.4.38", features=["serde"]}
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive", "env"] }
 lazy_static = "1.5.0"
 regex = "1.10.6"
 serde = { version = "1.0.210", features=["derive"]}
