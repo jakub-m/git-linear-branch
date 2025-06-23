@@ -50,13 +50,19 @@ fn list_branches(storage: &dyn Storage) -> Result<(), String> {
     Ok(())
 }
 
-fn handle_checkout(first_arg: &str, args: &[String], storage: &dyn Storage) -> Result<(), String> {
+/// `linear_branch_name` is the full branch name from linear, while `title_args` are concatenated
+/// into a specific branch name.
+fn handle_checkout(
+    linear_branch_name: &str,
+    title_args: &[String],
+    storage: &dyn Storage,
+) -> Result<(), String> {
     let now = chrono::Utc::now();
-    let branch = if let Some(prefix) = get_linear_prefix(&first_arg) {
-        let full_branch_name = match args {
-            [] => return Err("missing args".to_string()),
-            [branch_name] => branch_name.to_owned(),
-            [_branch_name, rest @ ..] => construct_full_branch_name(prefix, rest),
+    let branch = if let Some(prefix) = get_linear_prefix(&linear_branch_name) {
+        let full_branch_name = if title_args.is_empty() {
+            linear_branch_name.to_owned()
+        } else {
+            construct_full_branch_name(prefix, title_args)
         };
 
         match storage.get_by_prefix(prefix)? {
@@ -72,12 +78,12 @@ fn handle_checkout(first_arg: &str, args: &[String], storage: &dyn Storage) -> R
                 last_used: now,
                 // Use "first_arg" and not the full branch name, because the first arg is the original branch name
                 // from Linear, and we want to use that branch as the reference branch.
-                original_title: title_from_branch_name(&first_arg),
+                original_title: title_from_branch_name(&linear_branch_name),
             },
         }
     } else {
         let prefix = take_latest_prefix(storage)?;
-        let full_branch_name = construct_full_branch_name(&prefix, &args);
+        let full_branch_name = construct_full_branch_name(&prefix, &title_args);
         BranchInfo {
             prefix,
             last_used: now,
