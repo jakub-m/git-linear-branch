@@ -2,7 +2,7 @@ use std::process::Command;
 
 use crate::err::AppError;
 use crate::storage::{BranchInfo, JsonStorage, Storage};
-use clap::Parser;
+use clap::{CommandFactory, FromArgMatches, Parser};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::env;
@@ -11,6 +11,8 @@ use std::path::Path;
 
 const DEFAULT_STORAGE_FILENAME: &str = "git-linear-branch-meta.json";
 const STATE_DIR_NAME: &str = "git-linear-branch";
+const STATE_DIR_PARENT: &str = ".local/state";
+const PER_REPO_STORAGE_PREFIX: &str = ".";
 const DEFAULT_LAST_BRANCHES_COUNT: usize = 5;
 const SEP: &str = "-";
 
@@ -19,12 +21,15 @@ lazy_static! {
 }
 
 pub fn run() -> Result<(), String> {
-    let args = Args::parse();
+    let after_help = build_after_help();
+    let cmd = Args::command().after_help(after_help);
+    let matches = cmd.get_matches();
+    let args = Args::from_arg_matches(&matches).map_err(|e| e.to_string())?;
 
     let storage_file_path = if args.use_global_state {
         create_default_config_directory()? + "/" + DEFAULT_STORAGE_FILENAME
     } else {
-        get_git_root_directory()? + "/" + "." + DEFAULT_STORAGE_FILENAME
+        get_git_root_directory()? + "/" + PER_REPO_STORAGE_PREFIX + DEFAULT_STORAGE_FILENAME
     };
 
     let storage = JsonStorage::new(&storage_file_path)?;
@@ -172,13 +177,21 @@ fn get_git_root_directory() -> Result<String, AppError> {
 fn create_default_config_directory() -> Result<String, AppError> {
     let home = env::var("HOME")
         .map_err(|e| AppError::new(&format!("Could not get HOME env. var: {e}")))?;
-    let state_dir_path = format!("{home}/.local/state/{STATE_DIR_NAME}");
+    let state_dir_path = format!("{home}/{STATE_DIR_PARENT}/{STATE_DIR_NAME}");
     let state_dir_path = Path::new(&state_dir_path);
     if !state_dir_path.exists() {
         fs::create_dir_all(state_dir_path)
             .map_err(|e| AppError::new(&format!("Failed to create state path: {e}")))?;
     }
     Ok(state_dir_path.to_str().unwrap().to_string())
+}
+
+fn build_after_help() -> String {
+    format!(
+        "State file locations:\n  \
+         per-repository (default): <git-root>/{PER_REPO_STORAGE_PREFIX}{DEFAULT_STORAGE_FILENAME}\n  \
+         global (-g / GIT_LINEAR_USE_GLOBAL_STATE=true): $HOME/{STATE_DIR_PARENT}/{STATE_DIR_NAME}/{DEFAULT_STORAGE_FILENAME}"
+    )
 }
 
 #[derive(Parser)]
